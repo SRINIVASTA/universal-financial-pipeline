@@ -8,13 +8,16 @@ An enterprise-grade, cloud-native **automated financial ingestion dashboard** bu
 
 The project utilizes a decoupled, split-architecture design to isolate core business ETL logic from presentation scripts:
 
+```text
 📁 universal-financial-pipeline/
+
 │
 ├── 📄 .gitignore                 # Exclusion configuration rules manifest file
 ├── 📄 app.py                     # Front-end workspace UI viewport presentation layer
 ├── 📄 data_pipe.py               # Back-end automated ETL classification routine engine
 ├── 📄 README.md                  # System manual and architecture specification handbook
 └── 📄 requirements.txt           # Explicit system python wheel bundle dependency checklist
+```
 
 
 ---
