@@ -76,7 +76,7 @@ if uploaded_file is None:
                 "* **Liability Loops Shield:** Prevents double-counting with dedicated clearing codes.")
     with col2:
         st.info("#### 🛡️ Cloud-Native Security Design\n"
-                "* **Decoupled Architecture:** Business logic is isolated entirely from layout scripts.\n"
+                "* **De-coupled Architecture:** Business logic is isolated entirely from layout scripts.\n"
                 "* **Streamlit Cloud Secrets Encryption:** Sensitive keyword structures and chart account properties are safely hosted out of the open GitHub codebase.")
 else:
     file_name = uploaded_file.name
@@ -188,10 +188,46 @@ else:
         st.markdown("---")
 
         # ==============================================================================
+        # NEW ADAPTIVE MODULE: INTERACTIVE LEDGER ACCOUNT EXPLORER WORKSPACE
+        # ==============================================================================
+        st.markdown("### 🔍 DYNAMIC ACCOUNT CODE ROW EXPLORER")
+        
+        # Build dropdown options dynamically from available mapped account rows
+        available_codes = sorted(global_distribution_df['Xero_Account_Code'].unique())
+        secrets_titles = st.secrets["group_titles"]
+        
+        # Create user selection options formatting code + title context strings
+        selection_options = [f"{code} - {secrets_titles.get(code, 'Unmapped Base Account')}" for code in available_codes]
+        
+        selected_option = st.selectbox(
+            "📂 Choose a Xero Account Code to instantly inspect its underlying transaction logs:",
+            options=selection_options,
+            help="Filters your imported statement data row-by-row based on your selection pass."
+        )
+        
+        # Slice target string to isolate key code number value (first 4 characters)
+        target_account_code = selected_option[:4]
+        
+        # Filter the standard array down to matching transaction keys
+        filtered_logs_df = final_xero_df[final_xero_df['Xero_Account_Code'] == target_account_code]
+        
+        # Display targeted metrics summary cards for selection pass visibility
+        exp_col1, exp_col2, exp_col3 = st.columns(3)
+        with exp_col1:
+            st.markdown(f"**Account Net Turnover Balance:** `AED {filtered_logs_df['*Amount'].sum():,.2f}`")
+        with exp_col2:
+            st.markdown(f"**Total Mapped Row Entries Count:** `{len(filtered_logs_df)} Rows`")
+        with exp_col3:
+            st.markdown(f"**Relative Activity Density:** `{round((len(filtered_logs_df)/grand_total_rows)*100, 2)}%` of sheet text footprint")
+            
+        st.dataframe(filtered_logs_df, use_container_width=True, height=200)
+        st.markdown("---")
+
+        # ==============================================================================
         # DATA GRIDS LAYOUT RECONCILIATION TABS
         # ==============================================================================
         st.subheader("📋 GENERAL LEDGER VERIFICATION SHEETS & IMPORT GENERATION AUDIT")
-        tab1, tab2, tab3 = st.tabs(["Xero Bank Import Layout", "Balance Verification Audit", "Global Ledger Spend & Activity Sorter"])
+        tab1, tab2, tab3 = st.tabs(["Xero Bank Import layout", "Balance Verification Audit", "Global Ledger Spend & Activity Sorter"])
         
         with tab1:
             st.markdown("##### Cleaned bank import formatting structure mapped to target platform upload specifications.")
