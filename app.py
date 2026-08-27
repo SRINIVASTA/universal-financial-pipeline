@@ -6,7 +6,19 @@ import plotly.express as px
 import logging 
 from data_pipe import execute_universal_etl_pipeline
 
-# --- 3. FORCE STREAMLIT CHROMIUM HIDING LAYERS & GAP FIX ---
+# ==============================================================================
+# 1. INITIAL POSITION PAGE SPECIFICATIONS (MUST BE EXECUTED FIRST)
+# ==============================================================================
+st.set_page_config(
+    page_title="Universal Financial Pipeline Engine",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ==============================================================================
+# 2. FORCE STREAMLIT CHROMIUM HIDING LAYERS & GAP FIX
+# ==============================================================================
 st.markdown(""" 
  <style> 
  header[data-testid="stHeader"] { visibility: hidden !important; display: none !important; } 
@@ -25,7 +37,9 @@ st.markdown("""
 logging.basicConfig(level=logging.INFO) 
 logger = logging.getLogger("FIREWALL") 
 
-# --- 4. SECURE TOKEN VALIDATION USING YOUR EXISTING SECRETS LIST ---
+# ==============================================================================
+# 3. SECURE TOKEN VALIDATION USING YOUR EXISTING SECRETS LIST
+# ==============================================================================
 def verify_and_log_locally(user_key): 
     try:
         # Connects directly to your exact APPROVED_LICENSE_KEYS list configuration
@@ -36,7 +50,6 @@ def verify_and_log_locally(user_key):
 
     if user_key not in valid_keys: 
         logger.error("🔴 REJECTED: Invalid key structure submitted.") 
-        st.error("🚨 ACCESS DENIED: Invalid or Unpaid Software License Key.") 
         return False, None
         
     # Smart Regional String Parser maps "IN" to India, "US" to United States, "NG" to Nigeria dynamically
@@ -51,16 +64,20 @@ def verify_and_log_locally(user_key):
     logger.info(f"✅ ACCESS GRANTED: Profile matched for regional zone: {detected_country}") 
     return True, f"{detected_country} (Cloud Verified Gateway)" 
 
-# --- 5. SECURE STATE INITIALIZATION & SIDEBAR UI ---
+# ==============================================================================
+# 4. SECURE STATE INITIALIZATION & SIDEBAR UI
+# ==============================================================================
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "detected_location" not in st.session_state:
     st.session_state.detected_location = None
 
+# Sidebar Setup
 st.sidebar.title("🔑 Software Security Portal") 
-license_input = st.sidebar.text_input("Enter License Key:", type="password") 
 
+# System Status Check for User Guidance
 if not st.session_state.authenticated:
+    license_input = st.sidebar.text_input("Enter License Key:", type="password") 
     if st.sidebar.button("Validate License Key", use_container_width=True):
         if license_input:
             is_valid_structure, loc = verify_and_log_locally(license_input)
@@ -68,8 +85,40 @@ if not st.session_state.authenticated:
                 st.session_state.authenticated = True
                 st.session_state.detected_location = loc
                 st.rerun()
+            else:
+                st.sidebar.error("🚨 ACCESS DENIED: Invalid or Unpaid Software License Key.")
         else:
             st.sidebar.warning("Please provide a licensing token configuration value.")
+else:
+    st.sidebar.success(f"🔒 Authenticated: {st.session_state.detected_location}")
+    if st.sidebar.button("Log Out / Lock Console", use_container_width=True):
+        st.session_state.authenticated = False
+        st.session_state.detected_location = None
+        st.rerun()
+
+# ==============================================================================
+# 5. MASTER SECURITY FIREWALL INTERCEPTOR
+# ==============================================================================
+if not st.session_state.authenticated:
+    # This block forces a clean lock screen. 
+    # NO calculation, graphs, data tracking, or ingestion happens below this point.
+    st.title("🔒 Universal Financial Pipeline Engine")
+    st.warning("### **Access Unauthorized**")
+    st.markdown("""
+    This corporate data processing suite is protected by an active runtime software licensing wrapper.
+    
+    To view transaction logs, process accounting sheets, or generate ledger balances, you must enter a valid regional authentication token.
+    """)
+    st.info("Please expand the left **Control Console** sidebar and input an active software authorization key to continue.")
+    
+    # Explicitly stop script run to prevent any data exposure
+    st.stop()
+
+# ==============================================================================
+# 6. PROTECTED PRODUCTION APPLICATION DASHBOARD (Renders ONLY when authenticated)
+# ==============================================================================
+# Place your remaining app code beneath this line!
+# Everything here (columns, charts, files upload blocks) is fully secure.
 
 # Configure Web Presentation Viewport Layout for Premium Desktop View
 st.set_page_config(
