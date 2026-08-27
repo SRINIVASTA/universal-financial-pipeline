@@ -120,12 +120,12 @@ def simplify_bank_description(text):
     if " at " in text_clean:
         parts_after_at = text_clean.split(" at ", 1)
         if len(parts_after_at) > 1:
-            vendor_desc_raw = parts_after_at
+            vendor_desc_raw = parts_after_at[1]
             cleaned_vendor_parts = re.split(r'\. Avl|\.  Your|\. Your| on \d| in ', vendor_desc_raw, flags=re.IGNORECASE)
-            return cleaned_vendor_parts.strip().upper()[:60]
+            return cleaned_vendor_parts[0].strip().upper()[:60] # FIXED: Grab element [0] safely out of list match
         else: return text_clean.upper()[:60]
     clean_text = re.split(r'\. Your available|" Your avl|\. WAS CREDITED|\. WAS DEBITED', text_clean, flags=re.IGNORECASE)
-    return clean_text.strip().upper()[:60]
+    return clean_text[0].strip().upper()[:60] # FIXED: Grab element [0] safely out of list match
 
 def execute_universal_etl_pipeline(raw_input_df):
     layout_map = trace_file_column_indices(raw_input_df.columns)
@@ -151,7 +151,7 @@ def execute_universal_etl_pipeline(raw_input_df):
     normalized_output_df['Cheque Number'] = ""
     normalized_output_df['Reference'] = normalized_output_df['Reference'].apply(lambda x: str(int(float(x))) if x != "" and re.match(r'^\d+(\.\d+)?$', str(x)) else str(x))
 
-    engine_classifications = [generic_xero_pipeline_classifier(narrative, amt) for narrative, amt in zip(raw_narratives, interim_amounts)]
+    engine_classifications = [generic_xero_pipeline_classifier(narrative, amt)[1] for narrative, amt in zip(raw_narratives, interim_amounts)]
     normalized_output_df['Description'] = [simplify_bank_description(narrative) for narrative in raw_narratives]
     normalized_output_df['Xero_Account_Code'] = [item for item in engine_classifications]
     
