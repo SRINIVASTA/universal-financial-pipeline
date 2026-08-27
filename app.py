@@ -42,7 +42,6 @@ st.markdown("""
 # SIDEBAR CONTROL CONSOLE LAYER
 # ==============================================================================
 with st.sidebar:
-    st.image("https://icons8.com", width=70)
     st.markdown("## **Control Console**")
     st.markdown("Configure ledger parameters and process source file import wrappers cleanly.")
     st.markdown("---")
