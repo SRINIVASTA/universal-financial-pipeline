@@ -6,6 +6,7 @@ import plotly.express as px
 import logging 
 from data_pipe import execute_universal_etl_pipeline
 
+# --- 3. FORCE STREAMLIT CHROMIUM HIDING LAYERS & GAP FIX ---
 st.markdown(""" 
  <style> 
  header[data-testid="stHeader"] { visibility: hidden !important; display: none !important; } 
@@ -23,6 +24,52 @@ st.markdown("""
 
 logging.basicConfig(level=logging.INFO) 
 logger = logging.getLogger("FIREWALL") 
+
+# --- 4. SECURE TOKEN VALIDATION USING YOUR EXISTING SECRETS LIST ---
+def verify_and_log_locally(user_key): 
+    try:
+        # Connects directly to your exact APPROVED_LICENSE_KEYS list configuration
+        valid_keys = st.secrets["APPROVED_LICENSE_KEYS"]
+    except Exception:
+        st.error("🚨 CONFIGURATION ERROR: 'APPROVED_LICENSE_KEYS' list not found in cloud secrets.")
+        return False, None
+
+    if user_key not in valid_keys: 
+        logger.error("🔴 REJECTED: Invalid key structure submitted.") 
+        st.error("🚨 ACCESS DENIED: Invalid or Unpaid Software License Key.") 
+        return False, None
+        
+    # Smart Regional String Parser maps "IN" to India, "US" to United States, "NG" to Nigeria dynamically
+    detected_country = "Cloud Verified Gateway"
+    if "-IN-" in user_key:
+        detected_country = "India"
+    elif "-US-" in user_key:
+        detected_country = "United States"
+    elif "-NG-" in user_key:
+        detected_country = "Nigeria"
+        
+    logger.info(f"✅ ACCESS GRANTED: Profile matched for regional zone: {detected_country}") 
+    return True, f"{detected_country} (Cloud Verified Gateway)" 
+
+# --- 5. SECURE STATE INITIALIZATION & SIDEBAR UI ---
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "detected_location" not in st.session_state:
+    st.session_state.detected_location = None
+
+st.sidebar.title("🔑 Software Security Portal") 
+license_input = st.sidebar.text_input("Enter License Key:", type="password") 
+
+if not st.session_state.authenticated:
+    if st.sidebar.button("Validate License Key", use_container_width=True):
+        if license_input:
+            is_valid_structure, loc = verify_and_log_locally(license_input)
+            if is_valid_structure:
+                st.session_state.authenticated = True
+                st.session_state.detected_location = loc
+                st.rerun()
+        else:
+            st.sidebar.warning("Please provide a licensing token configuration value.")
 
 # Configure Web Presentation Viewport Layout for Premium Desktop View
 st.set_page_config(
@@ -266,3 +313,54 @@ else:
         # Diagnostic Sorter Column Mapping Log Block hidden safely at base footer
         with st.expander("🛠️ Advanced Ingestion Metadata Mapping Logs", expanded=False):
             st.json({k: (f"Detected at column index [{v}] ({raw_input_df.columns[v]})" if v is not None else "Missing - Using Fallback Parsing Engine") for k, v in dynamic_layout_indices.items()})
+
+# =============================================================================
+# --- 7. ABSOLUTE LAST LINE OF APP.PY (GUARANTEED EXECUTING IN BOTH STATES) ---
+# =============================================================================
+st.markdown( 
+ """ 
+ <style> 
+ .footer { 
+     position: fixed; 
+     left: 0; 
+     bottom: 0; 
+     width: 100%; 
+     background-color: #262730; 
+     color: #FAFAFA; 
+     text-align: center; 
+     font-size: 13px; 
+     padding: 12px 0; 
+     z-index: 9999999 !important; 
+     border-top: 1px solid #FF4B4B; 
+ } 
+ .footer a { 
+     color: #FF4B4B; 
+     text-decoration: none; 
+     margin: 0 10px; 
+     font-weight: bold; 
+ } 
+ .footer a:hover { 
+     text-decoration: underline; 
+     color: #FAFAFA; 
+ } 
+ .footer-separator { 
+     color: #666; 
+     margin: 0 5px; 
+ } 
+ [data-testid="stMainBlockContainer"] { 
+     padding-bottom: 120px !important; 
+ } 
+ .main .block-container {
+     padding-bottom: 120px !important;
+ }
+ </style> 
+ <div class="footer"> 
+     <span><strong>© 2026 T A Srinivas.</strong> All Rights Reserved. Prototype for portfolio display. For commercial licensing requests, please use the contact channels.</span> 
+     <span class="footer-separator">|</span> 
+     <a href="https://www.linkedin.com/in/srinivas-t-a-557637119/" target="_blank">LinkedIn Profile</a> 
+     <span class="footer-separator">|</span> 
+     <a href="mailto:tasrinivass@gmail.com">Contact Me</a> 
+ </div> 
+ """, 
+ unsafe_allow_html=True 
+)
