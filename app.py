@@ -103,17 +103,14 @@ else:
             raw_input_df = pd.read_csv(uploaded_file, sep=None, engine='python')
             
     except Exception as e:
-        st.error(f"❌ Critical Ingestion Error: Failed to structure input streams. Details: {e}")
+        st.error(f"Critical Ingestion Error: {e}")
         raw_input_df = None
     if raw_input_df is not None:
-        # Trigger general ledger data pipeline pass execution
         final_xero_df, reconciliation_df, global_distribution_df, dynamic_layout_indices = execute_universal_etl_pipeline(raw_input_df)
         
-        # Calculate Grand Sum of Rows for Visual KPI Cards Tracker
         grand_total_rows = int(global_distribution_df["Total_Row_Count"].sum())
         total_activity_weight = global_distribution_df["Global Ledger Activity Weight (%)"].sum()
         
-        # Inject structural Summary Totals Row directly onto the screen view dataframe
         totals_row = pd.DataFrame([{
             'Xero_Account_Code': 'TOTALS',
             'Ledger Category Title Sorter Name': 'Grand Total Summary Slices',
@@ -126,7 +123,6 @@ else:
         
         display_distribution_df = pd.concat([global_distribution_df, totals_row], ignore_index=True)
 
-        # Header Title Line
         st.title("📊 General Ledger Audit & Ingestion Workspace")
         st.markdown(f"Currently analyzing worksheet data matrix. Ingested profile table footprint contains **{grand_total_rows:,} records**.")
 
@@ -186,8 +182,9 @@ else:
             st.plotly_chart(fig_pie, use_container_width=True)
 
         st.markdown("---")
+
         # ==============================================================================
-        # NEW ADAPTIVE MODULE: INTERACTIVE LEDGER ACCOUNT EXPLORER WORKSPACE
+        # DYNAMIC ACCOUNT CODE ROW EXPLORER MODULE
         # ==============================================================================
         st.markdown("### 🔍 DYNAMIC ACCOUNT CODE ROW EXPLORER")
         available_codes = sorted(global_distribution_df['Xero_Account_Code'].unique())
@@ -227,33 +224,26 @@ else:
             st.dataframe(reconciliation_df, use_container_width=True, height=300)
             
         with tab3:
-            st.markdown("##### Global spend breakdown weights summary matrix with integrated calculation **Totals** line.")
-            try:
-                from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
-                builder = GridOptionsBuilder.from_dataframe(display_distribution_df)
-                builder.configure_selection(selection_mode='single', use_checkbox=True)
-                builder.configure_side_bar()
-                grid_options = builder.build()
+            st.markdown("##### Global activity summary matrix. Click any row checkbox to instantly load specific account entries underneath.")
+            
+            # Stable, native interactive row-clicking framework selection loop passing dataframe indices
+            clicked_event = st.dataframe(
+                display_distribution_df,
+                use_container_width=True,
+                height=300,
+                on_select="rerun",
+                selection_mode="single_row"
+            )
+            
+            # Detect row selections and display underlying details automatically
+            selected_row_indices = clicked_event.get("selection", {}).get("rows", [])
+            if selected_row_indices:
+                row_idx = selected_row_indices[0]
+                clicked_code = display_distribution_df.iloc[row_idx]['Xero_Account_Code']
                 
-                grid_response = AgGrid(
-                    display_distribution_df,
-                    gridOptions=grid_options,
-                    update_mode=GridUpdateMode.SELECTION_CHANGED,
-                    enable_enterprise_modules=False,
-                    fit_columns_on_grid_load=True,
-                    theme='alpine'
-                )
-                
-                selected_rows = grid_response['selected_rows']
-                if selected_rows:
-                    row_data = selected_rows if isinstance(selected_rows, list) else selected_rows
-                    clicked_code = row_data.get('Xero_Account_Code')
-                    if clicked_code and clicked_code != 'TOTALS':
-                        st.markdown(f"### 🎯 Undercompiled Entries Lookup Pass for Account `{clicked_code}`")
-                        st.dataframe(final_xero_df[final_xero_df['Xero_Account_Code'] == clicked_code], use_container_width=True)
-            except ModuleNotFoundError:
-                st.warning("⚠️ Interactive Cell Clicking is optimizing on server backend container. Displaying static data grid fallback...")
-                st.dataframe(display_distribution_df, use_container_width=True, height=300)
+                if clicked_code and clicked_code != 'TOTALS':
+                    st.markdown(f"### 🎯 Undercompiled Entries Lookup Pass for Account `{clicked_code}`")
+                    st.dataframe(final_xero_df[final_xero_df['Xero_Account_Code'] == clicked_code], use_container_width=True)
             
         # Stream structured analytics sheets tab to virtual memory byte stream
         buffer_memory_stream = io.BytesIO()
