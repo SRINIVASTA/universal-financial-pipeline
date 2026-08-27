@@ -164,7 +164,6 @@ else:
                     template='plotly_white'
                 )
                 fig_spend.update_layout(yaxis={'categoryorder': 'total ascending'}, coloraxis_showscale=False, height=350, margin=dict(l=0, r=0, t=40, b=0))
-                # FIXED: Stripped the inline ternary assignment to prevent DeltaGenerator prints
                 st.plotly_chart(fig_spend, use_container_width=True)
             else:
                 st.info("No outbound general ledger expense records available to render charts.")
@@ -236,11 +235,12 @@ else:
             )
             
             selected_row_indices = clicked_event.get("selection", {}).get("rows", [])
-            if selected_row_indices:
-                row_idx = selected_row_indices
-                clicked_code = display_distribution_df.iloc[row_idx]['Xero_Account_Code']
+            # FIXED: Explicitly isolate the list structure before selecting row properties to eliminate the bool check exception
+            if len(selected_row_indices) > 0:
+                target_row_index = int(selected_row_indices[0])
+                clicked_code = display_distribution_df.iloc[target_row_index]['Xero_Account_Code']
                 
-                if clicked_code and clicked_code != 'TOTALS':
+                if pd.notnull(clicked_code) and clicked_code != 'TOTALS':
                     st.markdown(f"### 🎯 Undercompiled Entries Lookup Pass for Account `{clicked_code}`")
                     st.dataframe(final_xero_df[final_xero_df['Xero_Account_Code'] == clicked_code], use_container_width=True)
             
