@@ -62,7 +62,7 @@ with st.sidebar:
         st.warning("⚠️ Awaiting financial source file upload wrapper...")
 
 # ==============================================================================
-# MAIN DASHBOARD VIEWPORT LAYER
+# MAIN DASHBOARD INITIALIZATION LAYER
 # ==============================================================================
 if uploaded_file is None:
     st.title("📊 Universal Financial Data Pipeline Dashboard")
@@ -186,17 +186,12 @@ else:
             st.plotly_chart(fig_pie, use_container_width=True)
 
         st.markdown("---")
-
         # ==============================================================================
         # NEW ADAPTIVE MODULE: INTERACTIVE LEDGER ACCOUNT EXPLORER WORKSPACE
         # ==============================================================================
         st.markdown("### 🔍 DYNAMIC ACCOUNT CODE ROW EXPLORER")
-        
-        # Build dropdown options dynamically from available mapped account rows
         available_codes = sorted(global_distribution_df['Xero_Account_Code'].unique())
         secrets_titles = st.secrets["group_titles"]
-        
-        # Create user selection options formatting code + title context strings
         selection_options = [f"{code} - {secrets_titles.get(code, 'Unmapped Base Account')}" for code in available_codes]
         
         selected_option = st.selectbox(
@@ -204,14 +199,9 @@ else:
             options=selection_options,
             help="Filters your imported statement data row-by-row based on your selection pass."
         )
-        
-        # Slice target string to isolate key code number value (first 4 characters)
         target_account_code = selected_option[:4]
-        
-        # Filter the standard array down to matching transaction keys
         filtered_logs_df = final_xero_df[final_xero_df['Xero_Account_Code'] == target_account_code]
         
-        # Display targeted metrics summary cards for selection pass visibility
         exp_col1, exp_col2, exp_col3 = st.columns(3)
         with exp_col1:
             st.markdown(f"**Account Net Turnover Balance:** `AED {filtered_logs_df['*Amount'].sum():,.2f}`")
@@ -235,30 +225,52 @@ else:
         with tab2:
             st.markdown("##### Pre-import generalization scorecard analysis balancing inflow gross velocities vs outflows.")
             st.dataframe(reconciliation_df, use_container_width=True, height=300)
-with tab3:
-    st.markdown("##### Global activity summary matrix. Click any row or cell to highlight balances.")
-    from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
-    
-    # Configure advanced clickable grid options
-    builder = GridOptionsBuilder.from_dataframe(display_distribution_df)
-    builder.configure_selection(selection_mode='single', use_checkbox=True)
-    builder.configure_side_bar()
-    grid_options = builder.build()
-    
-    # Render interactive clickable general ledger sheet grid grid
-    grid_response = AgGrid(
-        display_distribution_df,
-        gridOptions=grid_options,
-        update_mode=GridUpdateMode.SELECTION_CHANGED,
-        enable_enterprise_modules=False,
-        fit_columns_on_grid_load=True,
-        theme='alpine'
-    )
-    
-    # Capture the row index that the user clicks on screen dynamically
-    selected_rows = grid_response['selected_rows']
-    if selected_rows:
-        clicked_code = selected_rows[0]['Xero_Account_Code']
-        if clicked_code != 'TOTALS':
-            st.markdown(f"### 🎯 Undercompiled Entries Lookup Pass for Account `{clicked_code}`")
-            st.dataframe(final_xero_df[final_xero_df['Xero_Account_Code'] == clicked_code], use_container_width=True)
+            
+        with tab3:
+            st.markdown("##### Global spend breakdown weights summary matrix with integrated calculation **Totals** line.")
+            try:
+                from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+                builder = GridOptionsBuilder.from_dataframe(display_distribution_df)
+                builder.configure_selection(selection_mode='single', use_checkbox=True)
+                builder.configure_side_bar()
+                grid_options = builder.build()
+                
+                grid_response = AgGrid(
+                    display_distribution_df,
+                    gridOptions=grid_options,
+                    update_mode=GridUpdateMode.SELECTION_CHANGED,
+                    enable_enterprise_modules=False,
+                    fit_columns_on_grid_load=True,
+                    theme='alpine'
+                )
+                
+                selected_rows = grid_response['selected_rows']
+                if selected_rows:
+                    row_data = selected_rows if isinstance(selected_rows, list) else selected_rows
+                    clicked_code = row_data.get('Xero_Account_Code')
+                    if clicked_code and clicked_code != 'TOTALS':
+                        st.markdown(f"### 🎯 Undercompiled Entries Lookup Pass for Account `{clicked_code}`")
+                        st.dataframe(final_xero_df[final_xero_df['Xero_Account_Code'] == clicked_code], use_container_width=True)
+            except ModuleNotFoundError:
+                st.warning("⚠️ Interactive Cell Clicking is optimizing on server backend container. Displaying static data grid fallback...")
+                st.dataframe(display_distribution_df, use_container_width=True, height=300)
+            
+        # Stream structured analytics sheets tab to virtual memory byte stream
+        buffer_memory_stream = io.BytesIO()
+        with pd.ExcelWriter(buffer_memory_stream, engine='xlsxwriter') as workbook_writer:
+            final_xero_df.to_excel(workbook_writer, sheet_name='Xero Bank Import layout', index=False)
+            reconciliation_df.to_excel(workbook_writer, sheet_name='Balance Verification Audit', index=False)
+            global_distribution_df.to_excel(workbook_writer, sheet_name='Global Activity Sorter', index=False)
+            
+        st.markdown("---")
+        st.download_button(
+            label="💾 Download Compiled Multi-Tab Xero Reporting Package (.XLSX)",
+            data=buffer_memory_stream.getvalue(),
+            file_name="Universal_Xero_Purified_Financial_Package.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+        
+        # Diagnostic Sorter Column Mapping Log Block hidden safely at base footer
+        with st.expander("🛠️ Advanced Ingestion Metadata Mapping Logs", expanded=False):
+            st.json({k: (f"Detected at column index [{v}] ({raw_input_df.columns[v]})" if v is not None else "Missing - Using Fallback Parsing Engine") for k, v in dynamic_layout_indices.items()})
