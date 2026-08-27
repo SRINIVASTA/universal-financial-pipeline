@@ -164,7 +164,8 @@ else:
                     template='plotly_white'
                 )
                 fig_spend.update_layout(yaxis={'categoryorder': 'total ascending'}, coloraxis_showscale=False, height=350, margin=dict(l=0, r=0, t=40, b=0))
-                st.sidebar.plotly_chart(fig_spend, use_container_width=True) if False else st.plotly_chart(fig_spend, use_container_width=True)
+                # FIXED: Stripped the inline ternary assignment to prevent DeltaGenerator prints
+                st.plotly_chart(fig_spend, use_container_width=True)
             else:
                 st.info("No outbound general ledger expense records available to render charts.")
 
@@ -226,7 +227,6 @@ else:
         with tab3:
             st.markdown("##### Global activity summary matrix. Select any row checkbox to instantly load specific account entries underneath.")
             
-            # FIXED: Migrated parameters to standard unified environment multi-row format tracking indices
             clicked_event = st.dataframe(
                 display_distribution_df,
                 use_container_width=True,
@@ -235,10 +235,9 @@ else:
                 selection_mode="multi-row"
             )
             
-            # Extract list parameters from selection arrays dynamically
             selected_row_indices = clicked_event.get("selection", {}).get("rows", [])
             if selected_row_indices:
-                row_idx = selected_row_indices[0] # Grab the active focused array row index safely
+                row_idx = selected_row_indices
                 clicked_code = display_distribution_df.iloc[row_idx]['Xero_Account_Code']
                 
                 if clicked_code and clicked_code != 'TOTALS':
