@@ -184,33 +184,6 @@ else:
         st.markdown("---")
 
         # ==============================================================================
-        # DYNAMIC ACCOUNT CODE ROW EXPLORER MODULE
-        # ==============================================================================
-        st.markdown("### 🔍 DYNAMIC ACCOUNT CODE ROW EXPLORER")
-        available_codes = sorted(global_distribution_df['Xero_Account_Code'].unique())
-        secrets_titles = st.secrets["group_titles"]
-        selection_options = [f"{code} - {secrets_titles.get(code, 'Unmapped Base Account')}" for code in available_codes]
-        
-        selected_option = st.selectbox(
-            "📂 Choose a Xero Account Code to instantly inspect its underlying transaction logs:",
-            options=selection_options,
-            help="Filters your imported statement data row-by-row based on your selection pass."
-        )
-        target_account_code = selected_option[:4]
-        filtered_logs_df = final_xero_df[final_xero_df['Xero_Account_Code'] == target_account_code]
-        
-        exp_col1, exp_col2, exp_col3 = st.columns(3)
-        with exp_col1:
-            st.markdown(f"**Account Net Turnover Balance:** `AED {filtered_logs_df['*Amount'].sum():,.2f}`")
-        with exp_col2:
-            st.markdown(f"**Total Mapped Row Entries Count:** `{len(filtered_logs_df)} Rows`")
-        with exp_col3:
-            st.markdown(f"**Relative Activity Density:** `{round((len(filtered_logs_df)/grand_total_rows)*100, 2)}%` of sheet text footprint")
-            
-        st.dataframe(filtered_logs_df, use_container_width=True, height=200)
-        st.markdown("---")
-
-        # ==============================================================================
         # DATA GRIDS LAYOUT RECONCILIATION TABS
         # ==============================================================================
         st.subheader("📋 GENERAL LEDGER VERIFICATION SHEETS & IMPORT GENERATION AUDIT")
@@ -235,14 +208,26 @@ else:
             )
             
             selected_row_indices = clicked_event.get("selection", {}).get("rows", [])
-            # FIXED: Explicitly isolate the list structure before selecting row properties to eliminate the bool check exception
             if len(selected_row_indices) > 0:
                 target_row_index = int(selected_row_indices[0])
                 clicked_code = display_distribution_df.iloc[target_row_index]['Xero_Account_Code']
                 
                 if pd.notnull(clicked_code) and clicked_code != 'TOTALS':
-                    st.markdown(f"### 🎯 Undercompiled Entries Lookup Pass for Account `{clicked_code}`")
-                    st.dataframe(final_xero_df[final_xero_df['Xero_Account_Code'] == clicked_code], use_container_width=True)
+                    secrets_titles = st.secrets["group_titles"]
+                    st.markdown(f"### 🎯 Underlying Transactions Sorter Preview for Account `[{clicked_code}] - {secrets_titles.get(clicked_code, 'Base Account')}`")
+                    
+                    # Filter and extract specific account logs array segments
+                    tgt_logs_df = final_xero_df[final_xero_df['Xero_Account_Code'] == clicked_code]
+                    
+                    sub_col1, sub_col2, sub_col3 = st.columns(3)
+                    with sub_col1:
+                        st.markdown(f"**Account Net Sorter Balance:** `AED {tgt_logs_df['*Amount'].sum():,.2f}`")
+                    with sub_col2:
+                        st.markdown(f"**Total Entry Rows Density:** `{len(tgt_logs_df)} Rows`")
+                    with sub_col3:
+                        st.markdown(f"**Relative Activity Weight:** `{round((len(tgt_logs_df)/grand_total_rows)*100, 2)}%` of tab data profile")
+                        
+                    st.dataframe(tgt_logs_df, use_container_width=True, height=200)
             
         # Stream structured analytics sheets tab to virtual memory byte stream
         buffer_memory_stream = io.BytesIO()
