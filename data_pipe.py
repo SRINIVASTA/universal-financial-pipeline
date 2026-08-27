@@ -51,7 +51,6 @@ def generic_xero_pipeline_classifier(sms_narrative, numeric_valuation):
     text = str(sms_narrative).upper()
     val = float(numeric_valuation)
     
-    # Securely retrieve dynamic Chart of Accounts definitions directly from Streamlit Cloud Secrets
     secrets_titles = st.secrets["group_titles"]
     secrets_lexicon = st.secrets["universal_lexicon"]
 
@@ -82,7 +81,6 @@ def generic_xero_pipeline_classifier(sms_narrative, numeric_valuation):
     else:
         if any(tk in text for tk in ["TRANSFER", "TRFX", "IFT", "IBAN", "CLEARING"]): return secrets_titles["1050"], "1050", secrets_titles["1050"]
         return secrets_titles["4999"], "4999", secrets_titles["4999"]
-
 def assemble_universal_audit_trail(df):
     """Calculates ledger receipts vs disbursements balance reconciliation matrices."""
     inflows = df[df['*Amount'] > 0]['*Amount'].sum()
@@ -162,3 +160,10 @@ def execute_universal_etl_pipeline(raw_input_df):
         desc_lower = desc.lower()
         if any(tk in desc_lower for tk in ["debited", "withdrawal", "spent", "paid at", "purchase", "outward"]): final_amounts.append(-abs(val))
         elif any(tk in desc_lower for tk in ["credited", "deposited", "received", "inward"]): final_amounts.append(abs(val))
+        else: final_amounts.append(val)
+    normalized_output_df['*Amount'] = final_amounts
+    
+    final_xero_import_layout = normalized_output_df[['*Date', '*Amount', 'Payee', 'Description', 'Reference', 'Xero_Account_Code', 'Cheque Number']]
+    reconciliation_report_sheet, opex_distribution_sheet = assemble_universal_audit_trail(final_xero_import_layout)
+    
+    return final_xero_import_layout, reconciliation_report_sheet, opex_distribution_sheet, layout_map
