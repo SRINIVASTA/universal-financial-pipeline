@@ -3,6 +3,7 @@
 An enterprise-grade, cloud-native **automated financial ingestion dashboard** built with Streamlit and Pandas. This application provides a no-code interface to upload raw, multi-format bank statements, dynamically clean currency notations, automatically classify transactions, and export audit-ready accounting packages optimized for platforms like **Xero**.
 
 ---
+🌐 **Live Interactive Web App:** [Launch Live Streamlit Dashboard](https://universal-financial-pipeline-kt44zlebx8hanzr9czlqdm.streamlit.app/)
 
 ## 📈 System Architecture
 
