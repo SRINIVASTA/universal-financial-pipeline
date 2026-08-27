@@ -47,7 +47,6 @@ The project utilizes a decoupled, split-architecture design to isolate core busi
    ```bash
    streamlit run app.py
    ```
-4. Access your interactive dashboard via the native local desktop viewport (`http://localhost:8501`).
 
 ---
 
