@@ -3,7 +3,26 @@ import pandas as pd
 import re
 import io
 import plotly.express as px
+import logging 
 from data_pipe import execute_universal_etl_pipeline
+
+st.markdown(""" 
+ <style> 
+ header[data-testid="stHeader"] { visibility: hidden !important; display: none !important; } 
+ div[data-testid="stToolbar"] { visibility: hidden !important; display: none !important; } 
+ footer { visibility: hidden !important; } 
+ 
+ [data-testid="stMainBlockContainer"] {
+     padding-top: 1rem !important;
+ }
+ .main .block-container {
+     padding-top: 1rem !important;
+ }
+ </style> 
+ """, unsafe_allow_html=True) 
+
+logging.basicConfig(level=logging.INFO) 
+logger = logging.getLogger("FIREWALL") 
 
 # Configure Web Presentation Viewport Layout for Premium Desktop View
 st.set_page_config(
