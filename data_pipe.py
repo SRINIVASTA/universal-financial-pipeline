@@ -101,18 +101,39 @@ def assemble_universal_audit_trail(df):
     
     recon_df = pd.DataFrame(audit_rows, columns=["Audit Ledger Evaluation Metric", "Aggregated Balance", "Meta Classification Group"])
     
-    opex_mask = df['Xero_Account_Code'].str.startswith('4')
-    opex_df = df[opex_mask].copy()
-    if not opex_df.empty:
-        opex_df['Abs_Val'] = opex_df['*Amount'].abs()
-        ops_matrix = opex_df.groupby('Xero_Account_Code').agg(Spend_Volume=('Abs_Val', 'sum'), Row_Count=('Xero_Account_Code', 'count')).reset_index()
-        ops_matrix['Category Sorter Title'] = ops_matrix['Xero_Account_Code'].map(lambda x: secrets_titles.get(x, ["-", "Other Expenses"]))
-        tot_ops = ops_matrix['Spend_Volume'].sum()
-        ops_matrix['Operational Allocation Weight (%)'] = ((ops_matrix['Spend_Volume'] / tot_ops) * 100).round(2) if tot_ops > 0 else 0
-        ops_matrix = ops_matrix.sort_values(by='Spend_Volume', ascending=False)
-    else:
-        ops_matrix = pd.DataFrame(columns=['Xero_Account_Code', 'Category Sorter Title', 'Spend_Volume', 'Row_Count', 'Operational Allocation Weight (%)'])
-    return recon_df, ops_matrix
+    # NEW ENGINE STEP: Unified Global Sorter Pass Grouping 100% of Ledger Entries
+    working_df = df.copy()
+    working_df['Abs_Val'] = working_df['*Amount'].abs()
+    
+    # Calculate separate Net volumes, Inbound Receipts, and Outbound Expenditures
+    working_df['Receipts_Volume'] = np.where(working_df['*Amount'] > 0, working_df['*Amount'], 0)
+    working_df['Expenditures_Volume'] = np.where(working_df['*Amount'] < 0, working_df['Abs_Val'], 0)
+    
+    global_matrix = working_df.groupby('Xero_Account_Code').agg(
+        Net_Balance=('*Amount', 'sum'),
+        Inbound_Receipts_Volume=('Receipts_Volume', 'sum'),
+        Outbound_Expenditures_Volume=('Expenditures_Volume', 'sum'),
+        Total_Row_Count=('Xero_Account_Code', 'count')
+    ).reset_index()
+    
+    # Assign names safely from cloud configurations metadata schema
+    global_matrix['Ledger Category Title Sorter Name'] = global_matrix['Xero_Account_Code'].map(
+        lambda x: secrets_titles.get(x, "Unmapped Baseline Account Profile")
+    )
+    
+    # Calculate global percentage weight allocation benchmarks
+    total_volume_throughput = global_matrix['Inbound_Receipts_Volume'].sum() + global_matrix['Outbound_Expenditures_Volume'].sum()
+    global_matrix['Global Ledger Activity Weight (%)'] = (
+        ((global_matrix['Inbound_Receipts_Volume'] + global_matrix['Outbound_Expenditures_Volume']) / total_volume_throughput) * 100
+    ).round(2) if total_volume_throughput > 0 else 0
+    
+    global_matrix = global_matrix[[
+        'Xero_Account_Code', 'Ledger Category Title Sorter Name', 
+        'Net_Balance', 'Inbound_Receipts_Volume', 'Outbound_Expenditures_Volume', 
+        'Total_Row_Count', 'Global Ledger Activity Weight (%)'
+    ]].sort_values(by='Total_Row_Count', ascending=False)
+    
+    return recon_df, global_matrix
 
 def simplify_bank_description(text):
     if not isinstance(text, str): return ""
@@ -122,10 +143,10 @@ def simplify_bank_description(text):
         if len(parts_after_at) > 1:
             vendor_desc_raw = parts_after_at[1]
             cleaned_vendor_parts = re.split(r'\. Avl|\.  Your|\. Your| on \d| in ', vendor_desc_raw, flags=re.IGNORECASE)
-            return cleaned_vendor_parts[0].strip().upper()[:60] # FIXED: Grab element [0] safely out of list match
+            return cleaned_vendor_parts[0].strip().upper()[:60]
         else: return text_clean.upper()[:60]
     clean_text = re.split(r'\. Your available|" Your avl|\. WAS CREDITED|\. WAS DEBITED', text_clean, flags=re.IGNORECASE)
-    return clean_text[0].strip().upper()[:60] # FIXED: Grab element [0] safely out of list match
+    return clean_text[0].strip().upper()[:60]
 
 def execute_universal_etl_pipeline(raw_input_df):
     layout_map = trace_file_column_indices(raw_input_df.columns)
@@ -151,9 +172,9 @@ def execute_universal_etl_pipeline(raw_input_df):
     normalized_output_df['Cheque Number'] = ""
     normalized_output_df['Reference'] = normalized_output_df['Reference'].apply(lambda x: str(int(float(x))) if x != "" and re.match(r'^\d+(\.\d+)?$', str(x)) else str(x))
 
-    engine_classifications = [generic_xero_pipeline_classifier(narrative, amt)[1] for narrative, amt in zip(raw_narratives, interim_amounts)]
+    engine_classifications = [generic_xero_pipeline_classifier(narrative, amt) for narrative, amt in zip(raw_narratives, interim_amounts)]
     normalized_output_df['Description'] = [simplify_bank_description(narrative) for narrative in raw_narratives]
-    normalized_output_df['Xero_Account_Code'] = [item for item in engine_classifications]
+    normalized_output_df['Xero_Account_Code'] = [item[1] for item in engine_classifications]
     
     final_amounts = []
     for desc, val in zip(raw_narratives, interim_amounts):
@@ -164,6 +185,6 @@ def execute_universal_etl_pipeline(raw_input_df):
     normalized_output_df['*Amount'] = final_amounts
     
     final_xero_import_layout = normalized_output_df[['*Date', '*Amount', 'Payee', 'Description', 'Reference', 'Xero_Account_Code', 'Cheque Number']]
-    reconciliation_report_sheet, opex_distribution_sheet = assemble_universal_audit_trail(final_xero_import_layout)
+    reconciliation_report_sheet, global_distribution_sheet = assemble_universal_audit_trail(final_xero_import_layout)
     
-    return final_xero_import_layout, reconciliation_report_sheet, opex_distribution_sheet, layout_map
+    return final_xero_import_layout, reconciliation_report_sheet, global_distribution_sheet, layout_map
