@@ -42,7 +42,6 @@ logger = logging.getLogger("FIREWALL")
 # ==============================================================================
 def verify_and_log_locally(user_key): 
     try:
-        # Connects directly to your exact APPROVED_LICENSE_KEYS list configuration
         valid_keys = st.secrets["APPROVED_LICENSE_KEYS"]
     except Exception:
         st.error("🚨 CONFIGURATION ERROR: 'APPROVED_LICENSE_KEYS' list not found in cloud secrets.")
@@ -52,7 +51,6 @@ def verify_and_log_locally(user_key):
         logger.error("🔴 REJECTED: Invalid key structure submitted.") 
         return False, None
         
-    # Smart Regional String Parser maps "IN" to India, "US" to United States, "NG" to Nigeria dynamically
     detected_country = "Cloud Verified Gateway"
     if "-IN-" in user_key:
         detected_country = "India"
@@ -75,7 +73,6 @@ if "detected_location" not in st.session_state:
 # Sidebar Setup
 st.sidebar.title("🔑 Software Security Portal") 
 
-# System Status Check for User Guidance
 if not st.session_state.authenticated:
     license_input = st.sidebar.text_input("Enter License Key:", type="password") 
     if st.sidebar.button("Validate License Key", use_container_width=True):
@@ -97,11 +94,10 @@ else:
         st.rerun()
 
 # ==============================================================================
-# 5. MASTER SECURITY FIREWALL INTERCEPTOR
+# 5. MASTER SECURITY FIREWALL INTERCEPTOR (IF/ELSE ROUTING OVER ST.STOP)
 # ==============================================================================
 if not st.session_state.authenticated:
-    # This block forces a clean lock screen. 
-    # NO calculation, graphs, data tracking, or ingestion happens below this point.
+    # --- UNAUTHORIZED LOCK SCREEN VIEW ---
     st.title("🔒 Universal Financial Pipeline Engine")
     st.warning("### **Access Unauthorized**")
     st.markdown("""
@@ -110,152 +106,137 @@ if not st.session_state.authenticated:
     To view transaction logs, process accounting sheets, or generate ledger balances, you must enter a valid regional authentication token.
     """)
     st.info("Please expand the left **Control Console** sidebar and input an active software authorization key to continue.")
-    
-    # Explicitly stop script run to prevent any data exposure
-    st.stop()
-
-# ==============================================================================
-# 6. PROTECTED PRODUCTION APPLICATION DASHBOARD (Renders ONLY when authenticated)
-# ==============================================================================
-# Place your remaining app code beneath this line!
-# Everything here (columns, charts, files upload blocks) is fully secure.
-
-# Configure Web Presentation Viewport Layout for Premium Desktop View
-st.set_page_config(
-    page_title="Universal Financial Pipeline Engine",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Inject Custom CSS Styling for Corporate UI Depth
-st.markdown("""
-    <style>
-        div[data-testid="stMetricValue"] {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1E3A8A;
-        }
-        div[data-testid="stMetricLabel"] {
-            font-size: 14px;
-            color: #4B5563;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .reportview-container .main .block-container{
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-        h1 {
-            color: #1E3A8A;
-            font-weight: 800;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# ==============================================================================
-# SIDEBAR CONTROL CONSOLE LAYER
-# ==============================================================================
-with st.sidebar:
-    st.markdown("## **Control Console**")
-    st.markdown("Configure ledger parameters and process source file import wrappers cleanly.")
-    st.markdown("---")
-    
-    # Drag and Drop File Import Interface Viewport inside Sidebar
-    uploaded_file = st.file_uploader(
-        "⚡ Ingest Transaction Profile File", 
-        type=["csv", "xlsx", "xls", "txt"],
-        help="Supports generic banking rows, SMS sheets, or standard statement data."
-    )
-    
-    st.markdown("---")
-    st.markdown("### **System Status**")
-    if uploaded_file is not None:
-        st.info("🟢 File loaded successfully. Ready for processing pass.")
-    else:
-        st.warning("⚠️ Awaiting financial source file upload wrapper...")
-
-# ==============================================================================
-# MAIN DASHBOARD INITIALIZATION LAYER
-# ==============================================================================
-if uploaded_file is None:
-    st.title("📊 Universal Financial Data Pipeline Dashboard")
-    st.markdown("Welcome to the general ledger pipeline suite. Please use the left **Control Console** sidebar to ingest your raw banking files, clean decimal notation, filter unmapped balances, and generate a standardized, multi-tab reporting package ready for Xero import.")
-  
-    col1, col2 = st.columns(2)
-    with col1:
-        st.info("#### ⚙️ Automated Engine Processing Features\n"
-                "* **Fuzzy Header Matcher:** Automatically detects Date, Description, and Amount columns.\n"
-                "* **Currency Decimals Sorter:** Autocorrects European and localized float types on the fly.\n"
-                "* **Liability Loops Shield:** Prevents double-counting with dedicated clearing codes.")
-    with col2:
-        st.info("#### 🛡️ Cloud-Native Security Design\n"
-                "* **De-coupled Architecture:** Business logic is isolated entirely from layout scripts.\n"
-                "* **Streamlit Cloud Secrets Encryption:** Sensitive keyword structures and chart account properties are safely hosted out of the open GitHub codebase.")
 else:
-    file_name = uploaded_file.name
-    file_ext = re.sub(r'.*(\..*)$', r'\1', file_name).lower()
-    raw_input_df = None
-    
-    try:
-        if file_ext in ['.xlsx', '.xls']:
-            excel_file_object = pd.ExcelFile(uploaded_file)
-            sheet_names_list = excel_file_object.sheet_names
-            
-            if len(sheet_names_list) > 1:
-                selected_sheet = st.sidebar.selectbox(
-                    "📁 Target Sheet Selection Panel:",
-                    options=sheet_names_list
-                )
-                raw_input_df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
-            else:
-                raw_input_df = pd.read_excel(uploaded_file, sheet_name=0)
-                
-        elif file_ext == '.csv':
-            raw_input_df = pd.read_csv(uploaded_file)
-        else:
-            raw_input_df = pd.read_csv(uploaded_file, sep=None, engine='python')
-            
-    except Exception as e:
-        st.error(f"Critical Ingestion Error: {e}")
-        raw_input_df = None
-    if raw_input_df is not None:
-        final_xero_df, reconciliation_df, global_distribution_df, dynamic_layout_indices = execute_universal_etl_pipeline(raw_input_df)
-        
-        grand_total_rows = int(global_distribution_df["Total_Row_Count"].sum())
-        total_activity_weight = global_distribution_df["Global Ledger Activity Weight (%)"].sum()
-        
-        totals_row = pd.DataFrame([{
-            'Xero_Account_Code': 'TOTALS',
-            'Ledger Category Title Sorter Name': 'Grand Total Summary Slices',
-            'Net_Balance': final_xero_df['*Amount'].sum(),
-            'Inbound_Receipts_Volume': global_distribution_df['Inbound_Receipts_Volume'].sum(),
-            'Outbound_Expenditures_Volume': global_distribution_df['Outbound_Expenditures_Volume'].sum(),
-            'Total_Row_Count': grand_total_rows,
-            'Global Ledger Activity Weight (%)': round(total_activity_weight, 2)
-        }])
-        
-        display_distribution_df = pd.concat([global_distribution_df, totals_row], ignore_index=True)
+    # ==============================================================================
+    # 6. PROTECTED PRODUCTION APPLICATION DASHBOARD (Renders ONLY when authenticated)
+    # ==============================================================================
+    # Inject Custom CSS Styling for Corporate UI Depth
+    st.markdown("""
+        <style>
+            div[data-testid="stMetricValue"] {
+                font-size: 28px;
+                font-weight: 700;
+                color: #1E3A8A;
+            }
+            div[data-testid="stMetricLabel"] {
+                font-size: 14px;
+                color: #4B5563;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .reportview-container .main .block-container{
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+            }
+            h1 {
+                color: #1E3A8A;
+                font-weight: 800;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
-        st.title("📊 General Ledger Audit & Ingestion Workspace")
-        st.markdown(f"Currently analyzing worksheet data matrix. Ingested profile table footprint contains **{grand_total_rows:,} records**.")
-
-        # Top Executive KPI Indicator Dashboard Block Containers
-        st.markdown("### 📋 GENERAL LEDGER PERFORMANCE RECONCILIATION CARDS")
-        kpi_container = st.container()
-        with kpi_container:
-            kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
-            with kpi_col1:
-                st.metric(label="✨ Grand Sum Row Footprint", value=f"{grand_total_rows:,} Transactions")
-            with kpi_col2:
-                st.metric(label="💰 Statement Net Cash-Flow", value=f"AED {final_xero_df['*Amount'].sum():,.2f}")
-            with kpi_col3:
-                st.metric(label="📊 Active Chart Codes Mapped", value=f"{len(global_distribution_df)} Accounts")
-            with kpi_col4:
-                unmapped_rows = int(global_distribution_df[global_distribution_df['Xero_Account_Code'] == '4999']['Total_Row_Count'].sum())
-                st.metric(label="⚠️ Unmapped Supplier Fallbacks", value=f"{unmapped_rows} Rows")
-
+    # Rest of Sidebar Controls (Only visible when logged in)
+    with st.sidebar:
+        st.markdown("## **Control Console**")
+        st.markdown("Configure ledger parameters and process source file import wrappers cleanly.")
         st.markdown("---")
+        
+        uploaded_file = st.file_uploader(
+            "⚡ Ingest Transaction Profile File", 
+            type=["csv", "xlsx", "xls", "txt"],
+            help="Supports generic banking rows, SMS sheets, or standard statement data."
+        )
+        
+        st.markdown("---")
+        st.markdown("### **System Status**")
+        if uploaded_file is not None:
+            st.info("🟢 File loaded successfully. Ready for processing pass.")
+        else:
+            st.warning("⚠️ Awaiting financial source file upload wrapper...")
+
+    # ==============================================================================
+    # MAIN DASHBOARD INITIALIZATION LAYER
+    # ==============================================================================
+    if uploaded_file is None:
+        st.title("📊 Universal Financial Data Pipeline Dashboard")
+        st.markdown("Welcome to the general ledger pipeline suite. Please use the left **Control Console** sidebar to ingest your raw banking files, clean decimal notation, filter unmapped balances, and generate a standardized, multi-tab reporting package ready for Xero import.")
+      
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info("#### ⚙️ Automated Engine Processing Features\n"
+                    "* **Fuzzy Header Matcher:** Automatically detects Date, Description, and Amount columns.\n"
+                    "* **Currency Decimals Sorter:** Autocorrects European and localized float types on the fly.\n"
+                    "* **Liability Loops Shield:** Prevents double-counting with dedicated clearing codes.")
+        with col2:
+            st.info("#### 🛡️ Cloud-Native Security Design\n"
+                    "* **De-coupled Architecture:** Business logic is isolated entirely from layout scripts.\n"
+                    "* **Streamlit Cloud Secrets Encryption:** Sensitive keyword structures and chart account properties are safely hosted out of the open GitHub codebase.")
+    else:
+        file_name = uploaded_file.name
+        file_ext = re.sub(r'.*(\..*)$', r'\1', file_name).lower()
+        raw_input_df = None
+        
+        try:
+            if file_ext in ['.xlsx', '.xls']:
+                excel_file_object = pd.ExcelFile(uploaded_file)
+                sheet_names_list = excel_file_object.sheet_names
+                
+                if len(sheet_names_list) > 1:
+                    selected_sheet = st.sidebar.selectbox(
+                        "📁 Target Sheet Selection Panel:",
+                        options=sheet_names_list
+                    )
+                    raw_input_df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
+                else:
+                    raw_input_df = pd.read_excel(uploaded_file, sheet_name=0)
+                    
+            elif file_ext == '.csv':
+                raw_input_df = pd.read_csv(uploaded_file)
+            else:
+                raw_input_df = pd.read_csv(uploaded_file, sep=None, engine='python')
+                
+        except Exception as e:
+            st.error(f"Critical Ingestion Error: {e}")
+            raw_input_df = None
+            
+        if raw_input_df is not None:
+            # Assumes execute_universal_etl_pipeline is defined in your backend files
+            final_xero_df, reconciliation_df, global_distribution_df, dynamic_layout_indices = execute_universal_etl_pipeline(raw_input_df)
+            
+            grand_total_rows = int(global_distribution_df["Total_Row_Count"].sum())
+            total_activity_weight = global_distribution_df["Global Ledger Activity Weight (%)"].sum()
+            
+            totals_row = pd.DataFrame([{
+                'Xero_Account_Code': 'TOTALS',
+                'Ledger Category Title Sorter Name': 'Grand Total Summary Slices',
+                'Net_Balance': final_xero_df['*Amount'].sum(),
+                'Inbound_Receipts_Volume': global_distribution_df['Inbound_Receipts_Volume'].sum(),
+                'Outbound_Expenditures_Volume': global_distribution_df['Outbound_Expenditures_Volume'].sum(),
+                'Total_Row_Count': grand_total_rows,
+                'Global Ledger Activity Weight (%)': round(total_activity_weight, 2)
+            }])
+            
+            display_distribution_df = pd.concat([global_distribution_df, totals_row], ignore_index=True)
+
+            st.title("📊 General Ledger Audit & Ingestion Workspace")
+            st.markdown(f"Currently analyzing worksheet data matrix. Ingested profile table footprint contains **{grand_total_rows:,} records**.")
+
+            # Top Executive KPI Indicator Dashboard Block Containers
+            st.markdown("### 📋 GENERAL LEDGER PERFORMANCE RECONCILIATION CARDS")
+            kpi_container = st.container()
+            with kpi_container:
+                kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
+                with kpi_col1:
+                    st.metric(label="✨ Grand Sum Row Footprint", value=f"{grand_total_rows:,} Transactions")
+                with kpi_col2:
+                    st.metric(label="💰 Statement Net Cash-Flow", value=f"AED {final_xero_df['*Amount'].sum():,.2f}")
+                with kpi_col3:
+                    st.metric(label="📊 Active Chart Codes Mapped", value=f"{len(global_distribution_df)} Accounts")
+                with kpi_col4:
+                    unmapped_rows = int(global_distribution_df[global_distribution_df['Xero_Account_Code'] == '4999']['Total_Row_Count'].sum())
+                    st.metric(label="⚠️ Unmapped Supplier Fallbacks", value=f"{unmapped_rows} Rows")
+
+            st.markdown("---")
 
         # ==============================================================================
         # DATA VISUALIZATION LAYER (HIGH-IMPACT INTERACTIVE DESKTOP CHARTS)
