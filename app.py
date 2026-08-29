@@ -6,9 +6,6 @@ import plotly.express as px
 import logging 
 from data_pipe import execute_universal_etl_pipeline
 
-import streamlit as st
-import logging
-
 # ==============================================================================
 # 1. INITIAL POSITION PAGE SPECIFICATIONS (MUST BE EXECUTED FIRST)
 # ==============================================================================
