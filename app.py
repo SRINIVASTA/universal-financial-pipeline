@@ -97,10 +97,11 @@ else:
         st.rerun()
 
 # ==============================================================================
-# 5. MASTER SECURITY FIREWALL INTERCEPTOR (IF/ELSE ROUTING OVER ST.STOP)
+# 5. MASTER SECURITY FIREWALL INTERCEPTOR
 # ==============================================================================
 if not st.session_state.authenticated:
-    # --- UNAUTHORIZED LOCK SCREEN VIEW ---
+    # This block forces a clean lock screen. 
+    # NO calculation, graphs, data tracking, or ingestion happens below this point.
     st.title("🔒 Universal Financial Pipeline Engine")
     st.warning("### **Access Unauthorized**")
     st.markdown("""
@@ -109,61 +110,77 @@ if not st.session_state.authenticated:
     To view transaction logs, process accounting sheets, or generate ledger balances, you must enter a valid regional authentication token.
     """)
     st.info("Please expand the left **Control Console** sidebar and input an active software authorization key to continue.")
-
-else:
-    # ==============================================================================
-    # 6. PROTECTED PRODUCTION APPLICATION DASHBOARD (Renders ONLY when authenticated)
-    # ==============================================================================
-    st.title("📊 Universal Financial Pipeline Engine")
     
-    # Inject Custom CSS Styling for Corporate UI Depth
-    st.markdown("""
-        <style>
-            div[data-testid="stMetricValue"] {
-                font-size: 28px;
-                font-weight: 700;
-                color: #1E3A8A;
-            }
-            div[data-testid="stMetricLabel"] {
-                font-size: 14px;
-                color: #4B5563;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            .reportview-container .main .block-container{
-                padding-top: 2rem;
-                padding-bottom: 2rem;
-            }
-            h1 {
-                color: #1E3A8A;
-                font-weight: 800;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    # Explicitly stop script run to prevent any data exposure
+    st.stop()
 
-    # Rest of Sidebar Controls (Only visible when logged in)
-    with st.sidebar:
-        st.markdown("## **Control Console**")
-        st.markdown("Configure ledger parameters and process source file import wrappers cleanly.")
-        st.markdown("---")
-        
-        uploaded_file = st.file_uploader(
-            "⚡ Ingest Transaction Profile File", 
-            type=["csv", "xlsx", "xls", "txt"],
-            help="Supports generic banking rows, SMS sheets, or standard statement data."
-        )
-        
-        st.markdown("---")
-        st.markdown("### **System Status**")
-        if uploaded_file is not None:
-            st.info("🟢 File loaded successfully. Ready for processing pass.")
-        else:
-            st.warning("⚠️ Awaiting financial source file upload wrapper...")
+# ==============================================================================
+# 6. PROTECTED PRODUCTION APPLICATION DASHBOARD (Renders ONLY when authenticated)
+# ==============================================================================
+# Place your remaining app code beneath this line!
+# Everything here (columns, charts, files upload blocks) is fully secure.
 
-    # --- YOUR MAIN PROTECTED DASHBOARD CODE GOES HERE ---
-    st.success(f"Welcome back! Secure session active for {st.session_state.detected_location}.")
-    st.write("Your calculations, graphs, and transaction data tables go here.")
+# Configure Web Presentation Viewport Layout for Premium Desktop View
+st.set_page_config(
+    page_title="Universal Financial Pipeline Engine",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
+# Inject Custom CSS Styling for Corporate UI Depth
+st.markdown("""
+    <style>
+        div[data-testid="stMetricValue"] {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1E3A8A;
+        }
+        div[data-testid="stMetricLabel"] {
+            font-size: 14px;
+            color: #4B5563;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .reportview-container .main .block-container{
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        h1 {
+            color: #1E3A8A;
+            font-weight: 800;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==============================================================================
+# SIDEBAR CONTROL CONSOLE LAYER
+# ==============================================================================
+with st.sidebar:
+    st.markdown("## **Control Console**")
+    st.markdown("Configure ledger parameters and process source file import wrappers cleanly.")
+    st.markdown("---")
+    
+    # Drag and Drop File Import Interface Viewport inside Sidebar
+    uploaded_file = st.file_uploader(
+        "⚡ Ingest Transaction Profile File", 
+        type=["csv", "xlsx", "xls", "txt"],
+        help="Supports generic banking rows, SMS sheets, or standard statement data."
+    )
+    
+    st.markdown("---")
+    st.markdown("### **System Status**")
+    if uploaded_file is not None:
+        st.info("🟢 File loaded successfully. Ready for processing pass.")
+    else:
+        st.warning("⚠️ Awaiting financial source file upload wrapper...")
+
+# ==============================================================================
+# MAIN DASHBOARD INITIALIZATION LAYER
+# ==============================================================================
+if uploaded_file is None:
+    st.title("📊 Universal Financial Data Pipeline Dashboard")
+    st.markdown("Welcome to the general ledger pipeline suite. Please use the left **Control Console** sidebar to ingest your raw banking files, clean decimal notation, filter unmapped balances, and generate a standardized, multi-tab reporting package ready for Xero import.")
   
     col1, col2 = st.columns(2)
     with col1:
